@@ -1,0 +1,223 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import AnalysisBackground from "../../components/AnalysisBackground.vue"; // 引入新组件
+import { getCollection } from 'astro:content';
+
+const friends = await getCollection('friends');
+---
+
+<MainLayout title="朋友">
+  <AnalysisBackground client:only="vue" />
+
+  <div class="friends-container">
+    <header class="page-header">
+      <h1 class="glitch-title" data-text="LINKED NODES">LINKED NODES</h1>
+      <p class="subtitle">已建立连接的观测节点</p>
+    </header>
+
+    <div class="grid-layout">
+      {friends.map((friend) => (
+        <a href={friend.data.link} target="_blank" class="file-card" style={`--card-color: ${friend.data.color || 'var(--color-accent)'}`}>
+          <div class="card-tab">DATA-{friend.id.toUpperCase()}</div>
+
+          <div class="card-body">
+            <div class="avatar-box">
+              <img src={friend.data.avatar} alt={friend.data.name} loading="lazy" />
+            </div>
+            <div class="info-box">
+              <h2 class="friend-name">{friend.data.name}</h2>
+              <p class="friend-desc">{friend.data.desc}</p>
+            </div>
+
+            <div class="status-dot"></div>
+          </div>
+        </a>
+      ))}
+    </div>
+  </div>
+</MainLayout>
+
+<script>
+  import { gsap } from "gsap";
+
+  document.addEventListener('astro:page-load', () => {
+    // 清理可能存在的旧动画冲突
+    gsap.killTweensOf(".file-card");
+    gsap.killTweensOf(".page-header");
+
+    // 这里的 fromTo 确保了无论初始状态如何，最终都会变成 opacity: 1
+    gsap.fromTo(".file-card",
+      { y: 30, opacity: 0 }, // 初始状态
+      {
+        y: 0,
+        opacity: 1, // [关键] 强制终态为完全不透明（相对于 CSS 的 alpha）
+        duration: 0.6,
+        stagger: 0.1,
+        ease: "power2.out",
+        clearProps: "all" // 动画结束后清除内联样式，防止干扰 hover 效果
+      }
+    );
+
+    gsap.fromTo(".page-header",
+      { y: -30, opacity: 0 },
+      { y: 0, opacity: 1, duration: 1, delay: 0.2 }
+    );
+  });
+</script>
+
+<style>
+  .friends-container {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 4rem 2rem;
+    min-height: calc(100vh - var(--header-height) - var(--footer-height));
+  }
+
+  .page-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .glitch-title {
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--color-text-primary);
+    letter-spacing: 0.05em;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    margin-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    color: var(--color-text-secondary);
+    font-size: 1rem;
+    opacity: 0.8;
+  }
+
+  /* 网格布局 */
+  .grid-layout {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+  }
+
+  /* 档案卡片样式 */
+  .file-card {
+    --card-color: var(--color-accent); /* 默认颜色 */
+
+    display: flex;
+    flex-direction: column;
+
+    /* [关键修改] 提高不透明度 (0.4 -> 0.75) 让卡片本体更实，受背景干扰更小 */
+    background: rgba(var(--color-bg-rgb), 0.75);
+
+    /* 增强毛玻璃模糊度，进一步抹平背景差异 */
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px); /* 兼容 Safari */
+
+    border: 1px solid rgba(var(--color-border), 0.6);
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+
+    /* 确保 CSS 基础透明度是 1，动画只控制进入时的透明度 */
+    opacity: 1;
+  }
+
+  /* 悬停效果：边框变色，稍微上浮 */
+  .file-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--card-color);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+  }
+
+  /* 顶部的小标签 */
+  .card-tab {
+    background: rgba(var(--color-border), 0.3);
+    color: var(--color-text-secondary);
+    font-size: 0.7rem;
+    padding: 0.3rem 0.8rem;
+    font-family: monospace;
+    border-bottom: 1px solid rgba(var(--color-border), 0.3);
+    width: 100%;
+  }
+
+  .file-card:hover .card-tab {
+    background: var(--card-color);
+    color: #fff; /* 高亮时文字变白 */
+  }
+
+  .card-body {
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    position: relative;
+  }
+
+  .avatar-box {
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid var(--color-border);
+    transition: border-color 0.3s;
+  }
+
+  .file-card:hover .avatar-box {
+    border-color: var(--card-color);
+  }
+
+  .avatar-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .info-box {
+    flex: 1;
+    min-width: 0; /* 防止文字溢出 */
+  }
+
+  .friend-name {
+    margin: 0 0 0.3rem 0;
+    font-size: 1.2rem;
+    color: var(--color-text-primary);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .friend-desc {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* 状态灯 */
+  .status-dot {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--color-border);
+    transition: background-color 0.3s;
+  }
+
+  .file-card:hover .status-dot {
+    background-color: var(--card-color);
+    box-shadow: 0 0 8px var(--card-color);
+  }
+</style>

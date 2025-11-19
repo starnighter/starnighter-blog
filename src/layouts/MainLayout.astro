@@ -1,0 +1,187 @@
+---
+import Header from '../components/Header.vue';
+import {ClientRouter} from "astro:transitions";
+import TableOfContents from '../components/TableOfContents.vue';
+import Footer from '../components/Footer.vue';
+import CopyErrorMessage from '../components/CopyErrorMessage.vue';
+
+import '../styles/global.css';
+import 'element-plus/dist/index.css';
+import 'element-plus/theme-chalk/dark/css-vars.css';
+
+export interface Props {
+  title: string;
+  showSidebar?: boolean;
+  headings?: { depth: number, slug: string, text: string }[];
+}
+
+const {title, showSidebar = false, headings = []} = Astro.props;
+---
+
+<html lang="zh-CN" transition:persist>
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width"/>
+  <link rel="icon" type="image/svg+xml" href="/star.svg"/>
+  <meta name="generator" content={Astro.generator}/>
+  <title>{title} - Starnighter's Blog</title>
+
+  <ClientRouter/>
+
+  <script is:inline>
+    const getTheme = () => {
+      return localStorage.getItem('theme') ||
+        (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    };
+
+    const applyTheme = (doc, theme) => {
+      const html = doc.documentElement;
+      if (theme === 'dark') {
+        html.classList.add('dark');
+      } else {
+        html.classList.remove('dark');
+      }
+    };
+
+    const initialTheme = getTheme();
+    applyTheme(document, initialTheme);
+    document.addEventListener("astro:before-swap", (event) => {
+      const theme = getTheme();
+      applyTheme(event.newDocument, theme);
+    });
+  </script>
+</head>
+<body>
+<div class="page-wrapper">
+  <Header client:load/>
+
+  <main class="main-container">
+    {showSidebar && (
+      <slot name="sidebar"/>
+    )}
+
+    <div class="content-area">
+      <slot/>
+    </div>
+
+    {headings && headings.length > 0 && (
+      <div class="toc-wrapper">
+        <TableOfContents client:load headings={headings}/>
+      </div>
+    )}
+  </main>
+  <Footer client:load/>
+</div>
+<CopyErrorMessage client:only="vue"/>
+<script is:inline>
+  // 复制图标
+  const ICON_CLIPBOARD = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>`;
+  // 复制成功图标
+  const ICON_COPIED = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="m9 14 2 2 4-4"></path></svg>`;
+  // 复制失败图标
+  const ICON_FAILED = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M9 12L15 16M9 16L15 12"></path></svg>`;
+
+  function setupCodeCopy() {
+    const allCodeBlocks = document.querySelectorAll('.astro-code');
+    // console.log(allCodeBlocks);
+
+    allCodeBlocks.forEach(block => {
+      if (block.querySelector('.code-corner-wrapper')) {
+        return;
+      }
+
+      const lang = block.dataset.language || 'code';
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'code-corner-wrapper';
+
+      const langSpan = document.createElement('span');
+      langSpan.className = 'code-lang-span';
+      langSpan.innerText = lang;
+
+      const button = document.createElement('button');
+      button.className = 'copy-code-button';
+      button.innerHTML = ICON_CLIPBOARD;
+
+      button.addEventListener('click', async (e) => {
+        e.preventDefault();
+
+        const codeElement = block.querySelector('code');
+        if (!codeElement) return;
+
+        let textToCopy = '';
+        const lines = codeElement.querySelectorAll('.line');
+
+        if (lines.length > 0) {
+          lines.forEach(line => {
+            textToCopy += line.innerText + '\n';
+          });
+        } else {
+          textToCopy = codeElement.innerText;
+        }
+
+        try {
+          await navigator.clipboard.writeText(textToCopy.trim());
+          button.innerHTML = ICON_COPIED;
+          button.classList.add('copied');
+        } catch (err) {
+          console.error('复制代码失败', err);
+          button.innerHTML = ICON_FAILED;
+          const errorEvent = new CustomEvent('show:copy-error', {
+            detail: {
+              message: '复制失败，请检查浏览器权限'
+            }
+          });
+          document.dispatchEvent(errorEvent);
+        }
+
+        setTimeout(() => {
+          button.innerHTML = ICON_CLIPBOARD;
+          button.classList.remove('copied');
+        }, 1000);
+      });
+
+      wrapper.appendChild(langSpan);
+      wrapper.appendChild(button);
+      block.appendChild(wrapper);
+    });
+  }
+
+  setupCodeCopy();
+  document.addEventListener('astro:page-load', setupCodeCopy);
+</script>
+
+</body>
+</html>
+
+<style>
+  .content-area {
+    flex: 1;
+    min-width: 0;
+    padding: 1.5rem 2rem;
+  }
+
+  .page-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .main-container {
+    flex: 1;
+    display: flex;
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+
+  @media (max-width: 1024px) {
+    .toc-wrapper {
+      display: none;
+    }
+
+    .content-area {
+      padding: 1.5rem 1rem;
+    }
+  }
+</style>

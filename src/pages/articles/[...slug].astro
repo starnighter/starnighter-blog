@@ -1,0 +1,72 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import {getCollection, type CollectionEntry} from 'astro:content';
+import Sidebar from '../../components/Sidebar.vue';
+
+export async function getStaticPaths() {
+  const articles = await getCollection('articles');
+  return articles.map(article => ({
+    params: {slug: article.slug},
+    props: {article},
+  }));
+}
+
+type Props = {
+  article: CollectionEntry<'articles'>;
+};
+const {article} = Astro.props;
+
+const {Content, headings} = await article.render();
+---
+<MainLayout
+  title={article.data.title}
+  showSidebar={true}
+  headings={headings}
+>
+
+  <Sidebar client:load slot="sidebar">
+    <h3>文章</h3>
+    <ul>
+      <li><a href="/articles">« 返回列表</a></li>
+    </ul>
+
+    <h3>相关主题 (示例)</h3>
+    <ul>
+      <li><a href="#">关于 Astro</a></li>
+      <li><a href="#">Markdown 教程</a></li>
+    </ul>
+  </Sidebar>
+
+  <h1 class="post-title">{article.data.title}</h1>
+  <div class="post-meta">
+  </div>
+
+  <div class="astro-entry">
+    <Content/>
+  </div>
+
+</MainLayout>
+
+<style>
+  .post-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 0.5rem;
+    color: var(--color-text-primary);
+  }
+
+  .post-meta {
+    color: #666;
+    font-size: 0.95rem;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .post-meta .description {
+    font-style: italic;
+    margin-top: 0.5rem;
+    color: var(--color-text-secondary);
+  }
+</style>

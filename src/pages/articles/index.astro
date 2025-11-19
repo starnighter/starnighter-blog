@@ -1,0 +1,158 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import { getCollection } from 'astro:content';
+import Sidebar from '../../components/Sidebar.vue';
+
+const articles = (await getCollection('articles')).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+
+function formatDate(date: Date) {
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+---
+
+<MainLayout title="文章" showSidebar={true}>
+
+  <Sidebar client:load slot="sidebar">
+    <h3>文章导览</h3>
+    <ul>
+      <li><a href="/articles">所有文章</a></li>
+    </ul>
+    <h3>按分类 (示例)</h3>
+    <ul>
+      <li><a href="#">Astro</a></li>
+      <li><a href="#">Vue</a></li>
+      <li><a href="#">随笔</a></li>
+    </ul>
+  </Sidebar>
+
+  <header class="page-header">
+    <h1>文章列表</h1>
+  </header>
+
+  <section class="post-grid">
+    {articles.map(article => (
+      <a href={`/articles/${article.slug}/`} class="card-link">
+        <article class="post-card">
+          <div class="card-header">
+            <h2>{article.data.title}</h2>
+            <time datetime={article.data.pubDate.toISOString()}>
+              {formatDate(article.data.pubDate)}
+            </time>
+          </div>
+
+          <p class="description">{article.data.description}</p>
+
+          {article.data.tags && article.data.tags.length > 0 && (
+            <div class="tags">
+              {article.data.tags.map(tag => (
+                <span class="tag">#{tag}</span>
+              ))}
+            </div>
+          )}
+        </article>
+      </a>
+    ))}
+  </section>
+
+</MainLayout>
+
+<style>
+  .page-header {
+    margin-bottom: 2rem;
+  }
+
+  /* [布局] Grid 网格系统 */
+  .post-grid {
+    display: grid;
+    /* 响应式列宽：最小 300px，自动填满 */
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+
+  /* [卡片] 链接包装器，去除默认下划线 */
+  .card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+
+  /* [卡片] 样式主体 */
+  .post-card {
+    background-color: var(--color-bg-secondary); /* 使用你的主题背景色 */
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    height: 100%; /* 确保同伴高度一致 */
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s;
+  }
+
+  /* [交互] 悬停效果 */
+  .card-link:hover .post-card {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: var(--color-accent);
+  }
+
+  .card-header h2 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.25rem;
+    color: var(--color-text-primary);
+    line-height: 1.4;
+    transition: color 0.2s;
+  }
+
+  .card-link:hover h2 {
+    color: var(--color-accent);
+  }
+
+  .card-header time {
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    opacity: 0.8;
+  }
+
+  .description {
+    margin: 1rem 0 auto 0; /* auto 让 tags 沉底 */
+    font-size: 0.95rem;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+
+    /* 限制描述文本行数，超出显示省略号 */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* [Tags] 样式 */
+  .tags {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .tag {
+    font-size: 0.75rem;
+    background-color: var(--color-bg); /* 略微加深的背景 */
+    border: 1px solid var(--color-border);
+    padding: 0.2em 0.6em;
+    border-radius: 99px; /* 胶囊形状 */
+    color: var(--color-text-secondary);
+    transition: all 0.2s;
+  }
+
+  /* 悬停卡片时，tag 也稍微亮一点 */
+  .card-link:hover .tag {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+</style>

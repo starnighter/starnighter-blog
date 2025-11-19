@@ -1,0 +1,108 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import { getCollection } from "astro:content";
+import BookHero from "../../components/BookHero.vue";
+
+const allBooks = await getCollection("books");
+
+const sortedBooks = allBooks.sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+---
+
+<MainLayout title="阅读">
+  <BookHero client:only="vue" allBooks={allBooks} />
+
+  <div class="content-area">
+    <h2 class="section-title">书架收藏</h2>
+
+    <div class="books-grid">
+      {sortedBooks.map((book) => (
+        <a href={`/reading/${book.slug}`} class="book-card-link">
+          <article class="book-card">
+            <div class="book-info">
+              <h3>{book.data.title}</h3>
+              <p class="author">{book.data.author}</p>
+              <span class="genre">{book.data.genre}</span>
+              <hr/>
+              <p class="short-comment">{book.data.comment}</p>
+            </div>
+          </article>
+        </a>
+      ))}
+    </div>
+  </div>
+</MainLayout>
+
+<style>
+  .section-title {
+    text-align: center;
+    margin: 3rem 0 2rem;
+    font-size: 1.8rem;
+    color: var(--color-text-primary);
+  }
+
+  .books-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 2rem;
+    padding-bottom: 4rem;
+  }
+
+  .book-card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+
+  .book-card {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    height: 100%;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .book-card-link:hover .book-card {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    border-color: var(--color-accent);
+  }
+
+  .book-info h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.2rem;
+    color: var(--color-text-primary);
+  }
+
+  .author {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 0.5rem;
+  }
+
+  .genre {
+    font-size: 0.75rem;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    padding: 0.2em 0.6em;
+    border-radius: 4px;
+    color: var(--color-text-secondary);
+  }
+
+  .book-info hr {
+    margin: 1rem 0;
+    border: 0;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .short-comment {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--color-text-secondary);
+    font-style: italic;
+  }
+</style>
