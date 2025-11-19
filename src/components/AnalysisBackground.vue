@@ -4,11 +4,10 @@ import * as THREE from 'three';
 
 const containerRef = ref(null);
 let scene, camera, renderer;
-let nodes = [], lines = [], signals = []; // 节点、连线、信号
+let nodes = [], lines = [], signals = [];
 let animationId;
 let mouseX = 0, mouseY = 0;
 
-// 配置参数
 const NODE_COUNT = 40;
 const CONNECTION_DISTANCE = 180;
 
@@ -19,23 +18,17 @@ const initThree = () => {
   const width = container.clientWidth;
   const height = container.clientHeight;
 
-  // 1. 场景
   scene = new THREE.Scene();
-  // 雾效：增加深邃感，颜色需适配 CSS 变量
-  // 这里我们用代码动态获取 CSS 变量不太方便，先用通用的深色，依靠 canvas 透明度适配背景
 
-  // 2. 相机
   camera = new THREE.PerspectiveCamera(50, width / height, 1, 2000);
   camera.position.z = 600;
 
-  // 3. 渲染器
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setSize(width, height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   container.appendChild(renderer.domElement);
 
-  // 4. 创建节点 (六边形)
-  const nodeGeometry = new THREE.CircleGeometry(5, 6); // 半径5，6边形
+  const nodeGeometry = new THREE.CircleGeometry(5, 6);
   const nodeMaterial = new THREE.MeshBasicMaterial({ color: 0x00aaff });
 
   // 生成随机节点位置
@@ -49,9 +42,9 @@ const initThree = () => {
 
     node.position.x = (Math.random() - 0.5) * 800;
     node.position.y = (Math.random() - 0.5) * 600;
-    node.position.z = (Math.random() - 0.5) * 200; // 较扁平的 Z 轴，像一面墙
+    node.position.z = (Math.random() - 0.5) * 200;
 
-    // 为每个节点随机分配一个“脉冲”相位
+    // 为每个节点随机分配一个脉冲相位
     node.userData = {
       pulsePhase: Math.random() * Math.PI,
       connections: [] // 存储连接的邻居
@@ -61,7 +54,7 @@ const initThree = () => {
     nodes.push(node);
   }
 
-  // 5. 创建连线 (构建拓扑图)
+  // 创建连线
   const lineMaterial = new THREE.LineBasicMaterial({
     color: 0x00aaff,
     transparent: true,
@@ -97,10 +90,10 @@ const initThree = () => {
   document.addEventListener('mousemove', onMouseMove);
 };
 
-// 创建“信号”粒子
+// 创建信号粒子
 const createSignal = (startNode, endNode) => {
   const geometry = new THREE.CircleGeometry(2, 6);
-  const material = new THREE.MeshBasicMaterial({ color: 0xffffff }); // 白色高亮信号
+  const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
   const signal = new THREE.Mesh(geometry, material);
 
   signal.position.copy(startNode.position);
@@ -111,7 +104,7 @@ const createSignal = (startNode, endNode) => {
     start: startNode.position,
     end: endNode.position,
     progress: 0,
-    speed: 0.01 + Math.random() * 0.02 // 随机速度
+    speed: 0.01 + Math.random() * 0.02
   });
 };
 
@@ -132,18 +125,18 @@ const onWindowResize = () => {
 const animate = () => {
   const time = Date.now() * 0.002;
 
-  // 1. 相机视差移动 (模拟观察情报板)
+  // 相机视差移动
   camera.position.x += (mouseX - camera.position.x) * 0.05;
   camera.position.y += (-mouseY - camera.position.y) * 0.05;
   camera.lookAt(scene.position);
 
-  // 2. 节点脉冲动画 (呼吸灯)
+  // 节点脉冲动画
   nodes.forEach(node => {
     const scale = 1 + Math.sin(time + node.userData.pulsePhase) * 0.3;
     node.scale.set(scale, scale, 1);
   });
 
-  // 3. 信号传输动画
+  // 信号传输动画
   for (let i = signals.length - 1; i >= 0; i--) {
     const s = signals[i];
     s.progress += s.speed;
@@ -182,7 +175,6 @@ const animate = () => {
 };
 
 onMounted(() => {
-  // 延迟初始化确保容器有尺寸
   setTimeout(() => {
     initThree();
     animate();
@@ -214,7 +206,6 @@ onUnmounted(() => {
   overflow: hidden;
   pointer-events: none;
 
-  /* 动态渐变背景：模拟情报室屏幕的辉光 */
   background: var(--friend-bg-gradient);
   background-attachment: fixed;
   transition: background 0.5s ease;

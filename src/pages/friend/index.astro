@@ -1,6 +1,6 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
-import AnalysisBackground from "../../components/AnalysisBackground.vue"; // 引入新组件
+import AnalysisBackground from "../../components/AnalysisBackground.vue";
 import { getCollection } from 'astro:content';
 
 const friends = await getCollection('friends');
@@ -45,16 +45,15 @@ const friends = await getCollection('friends');
     gsap.killTweensOf(".file-card");
     gsap.killTweensOf(".page-header");
 
-    // 这里的 fromTo 确保了无论初始状态如何，最终都会变成 opacity: 1
     gsap.fromTo(".file-card",
       { y: 30, opacity: 0 }, // 初始状态
       {
         y: 0,
-        opacity: 1, // [关键] 强制终态为完全不透明（相对于 CSS 的 alpha）
+        opacity: 1,
         duration: 0.6,
         stagger: 0.1,
         ease: "power2.out",
-        clearProps: "all" // 动画结束后清除内联样式，防止干扰 hover 效果
+        clearProps: "all"
       }
     );
 
@@ -104,30 +103,21 @@ const friends = await getCollection('friends');
 
   /* 档案卡片样式 */
   .file-card {
-    --card-color: var(--color-accent); /* 默认颜色 */
-
+    --card-color: var(--color-accent);
     display: flex;
     flex-direction: column;
-
-    /* [关键修改] 提高不透明度 (0.4 -> 0.75) 让卡片本体更实，受背景干扰更小 */
     background: rgba(var(--color-bg-rgb), 0.75);
-
-    /* 增强毛玻璃模糊度，进一步抹平背景差异 */
     backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px); /* 兼容 Safari */
-
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid rgba(var(--color-border), 0.6);
     border-radius: 8px;
     text-decoration: none;
     transition: all 0.3s ease;
     overflow: hidden;
     position: relative;
-
-    /* 确保 CSS 基础透明度是 1，动画只控制进入时的透明度 */
     opacity: 1;
   }
 
-  /* 悬停效果：边框变色，稍微上浮 */
   .file-card:hover {
     transform: translateY(-4px);
     border-color: var(--card-color);
@@ -147,7 +137,7 @@ const friends = await getCollection('friends');
 
   .file-card:hover .card-tab {
     background: var(--card-color);
-    color: #fff; /* 高亮时文字变白 */
+    color: #fff;
   }
 
   .card-body {
@@ -180,7 +170,7 @@ const friends = await getCollection('friends');
 
   .info-box {
     flex: 1;
-    min-width: 0; /* 防止文字溢出 */
+    min-width: 0;
   }
 
   .friend-name {
