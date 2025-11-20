@@ -6,7 +6,7 @@ const currentYear = ref(new Date().getFullYear());
 
 <template>
   <footer class="site-footer">
-    <p>© {{ currentYear }} starnighter. All rights reserved.</p>
+    <p>&copy {{ currentYear }} starnighter. All rights reserved.</p>
   </footer>
 </template>
 

@@ -42,14 +42,27 @@ import MainLayout from '../../layouts/MainLayout.astro';
         <span>redis</span>
       </div>
     </section>
+
     <section class="bubble-card align-left reveal-left scroll-card">
-      <h3>我的世界观</h3>
-      <p>暂时没有内容哦</p>
+      <h3>关于我</h3>
+      <p>
+        小的时候家里面是做生意的，在商场里面放了一个电脑，于是总喜欢在那台电脑上瞎折腾🥹，虽然系统一直都是win7，但我也乐在其中，也许这就是我与计算机最初的结缘吧😜
+      </p>
     </section>
 
     <section class="bubble-card align-right reveal-right scroll-card">
-      <h3>我对人生的看法</h3>
-      <p>暂时没有内容哦</p>
+      <h3>联系我</h3>
+      <p>
+        你可以通过我的<a href="https://github.com/starnighter">github</a>或者<span>rheinchen@qq.com</span>来联系我，我会很乐意与每个人交流的😇
+      </p>
+    </section>
+
+    <section class="bubble-card align-left reveal-left scroll-card">
+      <h3>建站的目的</h3>
+      <p>
+        最初的想法是想把自己的一些折腾技术的经历放在里面来帮助同样有需求的人，
+        但是现在觉得分享一些自己喜欢的书也蛮重要的🙃，于是便多了阅读这一板块
+      </p>
     </section>
   </div>
 </MainLayout>
@@ -67,7 +80,7 @@ import MainLayout from '../../layouts/MainLayout.astro';
     allScrollTriggers.forEach(trigger => trigger.kill());
     allScrollTriggers = [];
 
-    const introText = "你好，我是一名大二的在读学生，喜欢折腾一些有趣的东西，热爱全栈，谢谢你来到我的博客。";
+    const introText = "Hi👋，我是一名大二的在读学生，喜欢折腾一些有趣的东西🐱，热爱全栈，谢谢你来到我的博客🥰";
     gsap.fromTo("#typewriter-text",
       {text: ""},
       {
