@@ -31,7 +31,7 @@ export default defineComponent({
           </svg>
         </a>
         <img
-          src="/avatar1.jpg"
+          src="/avatars/avatar1.jpg"
           alt="用户头像"
           class="avatar"
           onerror="this.src='https://placehold.co/40x40/eee/aaa?text=Avatar'"
