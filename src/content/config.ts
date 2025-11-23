@@ -7,6 +7,7 @@ const articlesCollection = defineCollection({
     description: z.string().optional(), // 描述是可选的
     pubDate: z.date(),
     tags: z.array(z.string()).optional(),
+    cover: z.string().optional(),
   }),
 });
 
@@ -15,10 +16,10 @@ const booksCollection = defineCollection({
   schema: z.object({
     title: z.string(),
     author: z.string(),
-    genre: z.string(), // 类型，例如：科幻、散文
-    comment: z.string(), // 你的一句话评价
-    pubDate: z.date(), // 推荐时间
-    cover: z.string().optional(), // 封面图片路径（可选）
+    genre: z.string(),
+    comment: z.string(),
+    pubDate: z.date(),
+    cover: z.string().optional(),
   }),
 });
 

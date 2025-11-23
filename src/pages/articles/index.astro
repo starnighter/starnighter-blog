@@ -1,11 +1,24 @@
 ---
 import MainLayout from '../../layouts/MainLayout.astro';
-import { getCollection } from 'astro:content';
+import {getCollection} from 'astro:content';
 import Sidebar from '../../components/Sidebar.vue';
 
 const articles = (await getCollection('articles')).sort(
   (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
 );
+
+const allTags = [...new Set(articles.flatMap(article => article.data.tags || []))];
+
+// 生成色相
+function generateTagHue(tagName: string) {
+  let hash = 0;
+  for (let i = 0; i < tagName.length; i++) {
+    hash = tagName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return Math.abs(hash % 360);
+}
+
+const tagHues = Object.fromEntries(allTags.map(tag => [tag, generateTagHue(tag)]));
 
 function formatDate(date: Date) {
   return date.toLocaleDateString('zh-CN', {
@@ -21,13 +34,11 @@ function formatDate(date: Date) {
   <Sidebar client:load slot="sidebar">
     <h3>文章导览</h3>
     <ul>
-      <li><a href="/articles">所有文章</a></li>
+      <li><a href="/articles" class="active">所有文章</a></li>
     </ul>
-    <h3>按分类 (示例)</h3>
+    <h3>Rust学习指南</h3>
     <ul>
-      <li><a href="#">Astro</a></li>
-      <li><a href="#">Vue</a></li>
-      <li><a href="#">随笔</a></li>
+      <li><a href="/articles/rust-learning-guide-1">Rust学习指南（一）</a></li>
     </ul>
   </Sidebar>
 
@@ -35,70 +46,332 @@ function formatDate(date: Date) {
     <h1>文章列表</h1>
   </header>
 
+  <div class="filter-card">
+    <div class="filter-header">
+      <h3>按标签筛选 <span id="selected-count" style="opacity: 0;">(0)</span></h3>
+      <button id="clear-tags" class="clear-btn" style="display: none;">清除所有</button>
+    </div>
+    <div class="tags-cloud">
+      {allTags.map(tag => (
+        <button
+          class="filter-tag"
+          data-tag={tag}
+          style={`--tag-hue: ${tagHues[tag]}`}
+        >
+          {tag}
+        </button>
+      ))}
+    </div>
+  </div>
+
   <section class="post-grid">
     {articles.map(article => (
-      <a href={`/articles/${article.slug}/`} class="card-link">
-        <article class="post-card">
-          <div class="card-header">
-            <h2>{article.data.title}</h2>
-            <time datetime={article.data.pubDate.toISOString()}>
-              {formatDate(article.data.pubDate)}
-            </time>
-          </div>
+      <article class="post-card-wrapper" data-tags={article.data.tags?.join(',') || ''}>
+        <div class="post-card">
 
-          <p class="description">{article.data.description}</p>
-
-          {article.data.tags && article.data.tags.length > 0 && (
-            <div class="tags">
-              {article.data.tags.map(tag => (
-                <span class="tag">#{tag}</span>
-              ))}
+          {article.data.cover && (
+            <div class="card-cover">
+              <img src={article.data.cover} alt={article.data.title} loading="lazy"/>
             </div>
           )}
-        </article>
-      </a>
+
+          <div class="card-content">
+            <div class="card-header">
+              <h2>
+                <a href={`/articles/${article.slug}/`} class="main-card-link">
+                  {article.data.title}
+                </a>
+              </h2>
+              <time datetime={article.data.pubDate.toISOString()}>
+                {formatDate(article.data.pubDate)}
+              </time>
+            </div>
+
+            <p class="description">{article.data.description}</p>
+
+            {article.data.tags && article.data.tags.length > 0 && (
+              <div class="tags">
+                {article.data.tags.map(tag => (
+                  <a
+                    href={`/articles/tag/${tag}`}
+                    class="tag"
+                    style={`--tag-hue: ${tagHues[tag]}`}
+                  >
+                    #{tag}
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+
+        </div>
+      </article>
     ))}
   </section>
 
+  <div id="no-results" style="display: none;">
+    <p>没有找到同时包含这些标签的文章。</p>
+  </div>
+
 </MainLayout>
+
+<script>
+  document.addEventListener('astro:page-load', () => {
+    const filterTags = document.querySelectorAll('.filter-tag');
+    const articles = document.querySelectorAll('.post-card-wrapper');
+    const clearBtn = document.getElementById('clear-tags');
+    const countSpan = document.getElementById('selected-count');
+    const noResults = document.getElementById('no-results');
+
+    let selectedTags = new Set();
+
+    const updateView = () => {
+      let visibleCount = 0;
+
+      // 筛选文章
+      articles.forEach(article => {
+        const articleTagsStr = article.getAttribute('data-tags') || '';
+        const articleTags = articleTagsStr.split(',');
+        const isVisible = selectedTags.size === 0 || [...selectedTags].every(t => articleTags.includes(t));
+
+        if (isVisible) {
+          (article as HTMLElement).style.display = 'flex';
+          visibleCount++;
+        } else {
+          (article as HTMLElement).style.display = 'none';
+        }
+      });
+
+      // 更新标签按钮样式
+      filterTags.forEach(btn => {
+        const tag = btn.getAttribute('data-tag');
+        if (selectedTags.has(tag)) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      // 更新工具栏
+      if (selectedTags.size > 0) {
+        if (clearBtn) clearBtn.style.display = 'inline-block';
+        if (countSpan) {
+          countSpan.textContent = `(${selectedTags.size})`;
+          countSpan.style.opacity = '1';
+        }
+      } else {
+        if (clearBtn) clearBtn.style.display = 'none';
+        if (countSpan) {
+          countSpan.textContent = '(0)';
+          countSpan.style.opacity = '0';
+        }
+      }
+
+      if (noResults) {
+        noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+      }
+    };
+
+    filterTags.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tag = btn.getAttribute('data-tag');
+        if (!tag) return;
+        if (selectedTags.has(tag)) {
+          selectedTags.delete(tag);
+        } else {
+          selectedTags.add(tag);
+        }
+        updateView();
+      });
+    });
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        selectedTags.clear();
+        updateView();
+      });
+    }
+  });
+</script>
 
 <style>
   .page-header {
     margin-bottom: 2rem;
   }
 
-  /* [布局] Grid 网格系统 */
+  /* 标签筛选卡片 */
+  .filter-card {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    width: 100%;
+  }
+
+  .filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    height: 24px;
+  }
+
+  .filter-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--color-text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  #selected-count {
+    font-size: 0.9rem;
+    color: var(--color-accent);
+    transition: opacity 0.2s;
+  }
+
+  .clear-btn {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    background: none;
+    border: 1px dashed var(--color-border);
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .clear-btn:hover {
+    color: #ff4d4d;
+    border-color: #ff4d4d;
+    background: rgba(255, 77, 77, 0.05);
+  }
+
+  .tags-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+  }
+
+  /* 筛选标签样式 */
+  .filter-tag {
+    --tag-hue: 210;
+    font-size: 0.9rem;
+    padding: 0.4rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+
+    /* 浅色模式 */
+    background-color: hsl(var(--tag-hue), 85%, 92%);
+    color: #222;
+  }
+
+  .filter-tag:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    background-color: hsl(var(--tag-hue), 85%, 85%);
+  }
+
+  .filter-tag.active {
+    border-color: var(--color-accent) !important;
+    box-shadow: 0 0 0 2px var(--color-accent);
+    font-weight: 600;
+  }
+
+  /* 深色模式适配 */
+  :global(html.dark) .filter-tag {
+    background-color: hsl(var(--tag-hue), 60%, 25%);
+    color: #e0e0e0;
+    border-color: hsl(var(--tag-hue), 50%, 35%);
+  }
+
+  :global(html.dark) .filter-tag:hover {
+    background-color: hsl(var(--tag-hue), 60%, 35%);
+  }
+
+  /* 文章列表布局 */
   .post-grid {
     display: grid;
-    /* 响应式列宽：最小 300px，自动填满 */
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1.5rem;
   }
 
-  /* [卡片] 链接包装器，去除默认下划线 */
-  .card-link {
-    text-decoration: none;
-    color: inherit;
-    display: block;
+  .post-card-wrapper {
+    display: flex;
+    flex-direction: column;
   }
 
-  /* [卡片] 样式主体 */
   .post-card {
-    background-color: var(--color-bg-secondary); /* 使用你的主题背景色 */
+    position: relative;
+    background-color: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
     border-radius: 12px;
-    padding: 1.5rem;
-    height: 100%; /* 确保同伴高度一致 */
+    padding: 0;
+    height: 100%;
     display: flex;
     flex-direction: column;
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s;
+    overflow: hidden;
   }
 
-  /* [交互] 悬停效果 */
-  .card-link:hover .post-card {
+  .post-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     border-color: var(--color-accent);
+  }
+
+  .main-card-link {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .main-card-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
+
+  .post-card:hover .main-card-link {
+    color: var(--color-accent);
+  }
+
+  .card-cover {
+    width: 100%;
+    height: 180px;
+    background-color: var(--color-bg-mute);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .card-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+    display: block;
+  }
+
+  .post-card:hover .card-cover img {
+    transform: scale(1.05);
+  }
+
+  .card-content {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    position: relative;
+    pointer-events: none;
+  }
+
+  .card-content > * {
+    pointer-events: auto;
   }
 
   .card-header h2 {
@@ -109,10 +382,6 @@ function formatDate(date: Date) {
     transition: color 0.2s;
   }
 
-  .card-link:hover h2 {
-    color: var(--color-accent);
-  }
-
   .card-header time {
     font-size: 0.85rem;
     color: var(--color-text-secondary);
@@ -120,39 +389,52 @@ function formatDate(date: Date) {
   }
 
   .description {
-    margin: 1rem 0 auto 0; /* auto 让 tags 沉底 */
+    margin: 1rem 0 auto 0;
     font-size: 0.95rem;
     color: var(--color-text-secondary);
     line-height: 1.6;
-
-    /* 限制描述文本行数，超出显示省略号 */
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
 
-  /* [Tags] 样式 */
   .tags {
     margin-top: 1.5rem;
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
+    position: relative;
+    z-index: 2;
   }
 
+  /* 卡片内小标签 */
   .tag {
+    --tag-hue: 210;
     font-size: 0.75rem;
-    background-color: var(--color-bg); /* 略微加深的背景 */
-    border: 1px solid var(--color-border);
     padding: 0.2em 0.6em;
-    border-radius: 99px; /* 胶囊形状 */
-    color: var(--color-text-secondary);
-    transition: all 0.2s;
+    border-radius: 99px;
+    text-decoration: none;
+    background-color: hsl(var(--tag-hue), 85%, 92%);
+    color: #333;
+    border: 1px solid transparent;
   }
 
-  /* 悬停卡片时，tag 也稍微亮一点 */
-  .card-link:hover .tag {
-    border-color: var(--color-accent);
-    color: var(--color-accent);
+  :global(html.dark) .tag {
+    background-color: hsl(var(--tag-hue), 60%, 25%);
+    color: #ddd;
+    border-color: hsl(var(--tag-hue), 50%, 35%);
+  }
+
+  .tag:hover {
+    border-color: var(--color-accent) !important;
+    color: var(--color-accent) !important;
+  }
+
+  #no-results {
+    text-align: center;
+    padding: 3rem;
+    color: var(--color-text-secondary);
+    font-style: italic;
   }
 </style>

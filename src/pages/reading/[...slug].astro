@@ -21,28 +21,40 @@ const { Content } = await book.render();
 <MainLayout title={book.data.title}>
   <div class="book-detail-wrapper">
     <header class="book-header">
-      <h1 class="book-title">{book.data.title}</h1>
 
-      <div class="book-meta">
-        <div class="meta-item">
-          <span class="label">作者</span>
-          <span class="value">{book.data.author}</span>
-        </div>
-        <div class="meta-item">
-          <span class="label">类型</span>
-          <span class="value badge">{book.data.genre}</span>
-        </div>
-        <div class="meta-item">
-          <span class="label">推荐时间</span>
-          <time class="value">{book.data.pubDate.toLocaleDateString('zh-CN')}</time>
+      <div class="header-content">
+        {book.data.cover && (
+          <div class="detail-cover">
+            <img src={book.data.cover} alt={book.data.title} />
+          </div>
+        )}
+
+        <div class="header-info">
+          <h1 class="book-title">{book.data.title}</h1>
+
+          <div class="book-meta">
+            <div class="meta-item">
+              <span class="label">作者</span>
+              <span class="value">{book.data.author}</span>
+            </div>
+            <div class="meta-item">
+              <span class="label">类型</span>
+              <span class="value badge">{book.data.genre}</span>
+            </div>
+            <div class="meta-item">
+              <span class="label">推荐时间</span>
+              <time class="value">{book.data.pubDate.toLocaleDateString('zh-CN')}</time>
+            </div>
+          </div>
+
+          <div class="book-quote">
+            <blockquote>
+              <p>“ {book.data.comment} ”</p>
+            </blockquote>
+          </div>
         </div>
       </div>
 
-      <div class="book-quote">
-        <blockquote>
-          <p>“ {book.data.comment} ”</p>
-        </blockquote>
-      </div>
     </header>
 
     <hr class="divider" />
@@ -62,15 +74,43 @@ const { Content } = await book.render();
 
 <style>
   .book-detail-wrapper {
-    max-width: 720px;
+    max-width: 800px;
     margin: 0 auto;
     padding: 3rem 1.5rem;
   }
 
-  /* 头部样式 */
   .book-header {
-    text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 3rem;
+  }
+
+  .header-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3rem;
+    text-align: left;
+  }
+
+  .detail-cover {
+    flex-shrink: 0;
+    width: 160px;
+    height: 230px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    background-color: #eee;
+    border: 4px solid var(--color-bg-secondary);
+  }
+
+  .detail-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .header-info {
+    flex: 1;
+    max-width: 500px;
   }
 
   .book-title {
@@ -81,10 +121,9 @@ const { Content } = await book.render();
     letter-spacing: -0.02em;
   }
 
-  /* 元数据行 */
   .book-meta {
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 2rem;
     font-size: 0.95rem;
     color: var(--color-text-secondary);
@@ -95,7 +134,7 @@ const { Content } = await book.render();
   .meta-item {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.2rem;
   }
 
@@ -111,7 +150,6 @@ const { Content } = await book.render();
     color: var(--color-text-primary);
   }
 
-  /* 类型标签 */
   .badge {
     background-color: var(--color-bg-secondary);
     padding: 0.1rem 0.6rem;
@@ -119,10 +157,9 @@ const { Content } = await book.render();
     border: 1px solid var(--color-border);
   }
 
-  /* 引言样式 */
   .book-quote blockquote {
-    margin: 0 auto;
-    max-width: 90%;
+    margin: 0;
+    max-width: 100%;
     font-size: 1.1rem;
     line-height: 1.6;
     color: var(--color-accent);
@@ -145,14 +182,12 @@ const { Content } = await book.render();
     opacity: 0.5;
   }
 
-  /* 正文区域 */
   .book-content {
     font-size: 1.05rem;
     line-height: 1.8;
     color: var(--color-text-primary);
   }
 
-  /* 底部按钮 */
   .post-footer {
     margin-top: 4rem;
     display: flex;
@@ -180,13 +215,28 @@ const { Content } = await book.render();
   }
 
   /* 移动端适配 */
-  @media (max-width: 600px) {
+  @media (max-width: 700px) {
+    .header-content {
+      flex-direction: column;
+      text-align: center;
+      gap: 2rem;
+    }
+
     .book-title {
       font-size: 2rem;
     }
 
     .book-meta {
-      gap: 1.5rem;
+      justify-content: center;
+    }
+
+    .meta-item {
+      align-items: center;
+    }
+
+    .detail-cover {
+      width: 140px;
+      height: 200px;
     }
   }
 </style>

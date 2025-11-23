@@ -4,5 +4,6 @@ author: "刘慈欣"
 genre: "科幻"
 comment: "给岁月以文明，而不是给文明以岁月。"
 pubDate: 2025-11-21
+cover: "https://upload.wikimedia.org/wikipedia/zh/0/0f/Threebody.jpg"
 ---
 这是一本非常伟大的科幻小说...

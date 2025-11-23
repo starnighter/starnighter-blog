@@ -1,17 +1,17 @@
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import {ref, onMounted, onUnmounted, nextTick} from 'vue';
 import * as THREE from 'three';
 import gsap from 'gsap';
 
 const props = defineProps({
-  allBooks: { type: Array, required: true }
+  allBooks: {type: Array, required: true}
 });
 
 const containerRef = ref(null);
 const currentBook = ref(null);
 const showCard = ref(false);
 
-// 随机推荐书籍
+// 随机推荐逻辑
 const pickRandomBook = () => {
   let seen = JSON.parse(localStorage.getItem('seen_books') || '[]');
   let available = props.allBooks.filter(b => !seen.includes(b.slug));
@@ -31,14 +31,12 @@ let scene, camera, renderer, bookGroup;
 let leftWing, rightWing;
 let animationId;
 
-// 创建假文字行
 const createTextLines = (width, height) => {
   const group = new THREE.Group();
   const lineMaterial = new THREE.MeshBasicMaterial({
     color: 0xbbbbbb,
     side: THREE.DoubleSide
   });
-
   const linesCount = 6;
   const startY = height / 2 - 0.6;
   const gap = 0.5;
@@ -47,10 +45,8 @@ const createTextLines = (width, height) => {
     const lineWidth = width * (0.7 + Math.random() * 0.25);
     const geo = new THREE.PlaneGeometry(lineWidth, 0.12);
     const mesh = new THREE.Mesh(geo, lineMaterial);
-
     mesh.position.set(0, startY - i * gap, 0.01);
     mesh.position.x = (Math.random() - 0.5) * 0.1;
-
     group.add(mesh);
   }
   group.rotation.x = -Math.PI / 2;
@@ -61,7 +57,6 @@ const initThree = () => {
   const container = containerRef.value;
   if (!container) return;
 
-  // 获取容器尺寸，提供兜底值
   const width = container.clientWidth || window.innerWidth;
   const height = container.clientHeight || 500;
 
@@ -73,14 +68,14 @@ const initThree = () => {
   camera.position.set(0, 8, camDist);
   camera.lookAt(0, 0, 0);
 
-  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
   renderer.setSize(width, height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
   while (container.firstChild) container.removeChild(container.firstChild);
   container.appendChild(renderer.domElement);
 
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.8); // 稍微调亮环境光
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
   scene.add(ambientLight);
   const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
   dirLight.position.set(5, 10, 5);
@@ -89,21 +84,9 @@ const initThree = () => {
   // 绘制书本
   bookGroup = new THREE.Group();
 
-  // 材质
-  const coverMaterial = new THREE.MeshStandardMaterial({
-    color: 0x8b4513,
-    roughness: 0.6,
-    metalness: 0.1
-  });
-  const pageMaterial = new THREE.MeshStandardMaterial({
-    color: 0xfffef0,
-    roughness: 0.8
-  });
-  // 侧面材质
-  const sidePageMaterial = new THREE.MeshStandardMaterial({
-    color: 0xe0dcca,
-    roughness: 0.9
-  });
+  const coverMaterial = new THREE.MeshStandardMaterial({color: 0x8b4513, roughness: 0.6, metalness: 0.1});
+  const pageMaterial = new THREE.MeshStandardMaterial({color: 0xfffef0, roughness: 0.8});
+  const sidePageMaterial = new THREE.MeshStandardMaterial({color: 0xe0dcca, roughness: 0.9});
 
   const bookWidth = 3.2;
   const bookHeight = 4.4;
@@ -112,41 +95,31 @@ const initThree = () => {
 
   // 左半部分
   leftWing = new THREE.Group();
-  // 左封面
   const lCoverGeo = new THREE.BoxGeometry(bookWidth, coverThick, bookHeight);
   lCoverGeo.translate(-bookWidth / 2, coverThick / 2, 0);
   const lCover = new THREE.Mesh(lCoverGeo, coverMaterial);
 
-  // 左书页
   const lPageGeo = new THREE.BoxGeometry(bookWidth - 0.1, pageThick, bookHeight - 0.2);
   lPageGeo.translate(-(bookWidth - 0.1) / 2, coverThick + pageThick / 2, 0);
   const lPageMaterials = [sidePageMaterial, sidePageMaterial, pageMaterial, sidePageMaterial, sidePageMaterial, sidePageMaterial];
   const lPages = new THREE.Mesh(lPageGeo, lPageMaterials);
 
-  // 左侧假文字
   const lText = createTextLines(bookWidth - 1.2, bookHeight - 1);
-  // 定位文字：基于书页表面高度
-  lText.position.set(-bookWidth/2 + 0.1, coverThick + pageThick + 0.01, 0);
-
+  lText.position.set(-bookWidth / 2 + 0.1, coverThick + pageThick + 0.01, 0);
   leftWing.add(lCover, lPages, lText);
-
 
   // 右半部分
   rightWing = new THREE.Group();
-  // 右封面
   const rCoverGeo = new THREE.BoxGeometry(bookWidth, coverThick, bookHeight);
   rCoverGeo.translate(bookWidth / 2, coverThick / 2, 0);
   const rCover = new THREE.Mesh(rCoverGeo, coverMaterial);
 
-  // 右书页
   const rPageGeo = new THREE.BoxGeometry(bookWidth - 0.1, pageThick, bookHeight - 0.2);
   rPageGeo.translate((bookWidth - 0.1) / 2, coverThick + pageThick / 2, 0);
-  const rPages = new THREE.Mesh(rPageGeo, lPageMaterials); // 复用材质数组
+  const rPages = new THREE.Mesh(rPageGeo, lPageMaterials);
 
-  // 右侧假文字
   const rText = createTextLines(bookWidth - 1.2, bookHeight - 1);
-  rText.position.set(bookWidth/2 - 0.1, coverThick + pageThick + 0.01, 0);
-
+  rText.position.set(bookWidth / 2 - 0.1, coverThick + pageThick + 0.01, 0);
   rightWing.add(rCover, rPages, rText);
 
   // 书脊
@@ -155,16 +128,16 @@ const initThree = () => {
   spine.rotation.x = Math.PI / 2;
   spine.position.set(0, 0, 0);
 
+  // 组装
   const openAngle = -0.15;
   leftWing.rotation.z = openAngle;
   rightWing.rotation.z = -openAngle;
 
   bookGroup.add(leftWing, rightWing, spine);
-
   bookGroup.rotation.x = 0.4;
   scene.add(bookGroup);
 
-  // 书本悬浮动画
+  // 悬浮动画
   gsap.to(bookGroup.position, {
     y: 0.4,
     duration: 2.5,
@@ -190,7 +163,6 @@ const onBookClick = () => {
   if (showCard.value) return;
   currentBook.value = pickRandomBook();
 
-  // 翻转动画
   gsap.to(bookGroup.rotation, {
     y: Math.PI * 2,
     duration: 0.8,
@@ -200,13 +172,14 @@ const onBookClick = () => {
     }
   });
 
-  // 开合细节动画
   const tl = gsap.timeline();
-  tl.to([leftWing.rotation, rightWing.rotation], { z: 0, duration: 0.2, ease: "power2.in" })
-    .to(leftWing.rotation, { z: -0.15, duration: 0.4, ease: "elastic.out(1, 0.5)" }, "+=0.1")
-    .to(rightWing.rotation, { z: 0.15, duration: 0.4, ease: "elastic.out(1, 0.5)" }, "<");
+  tl.to([leftWing.rotation, rightWing.rotation], {z: 0, duration: 0.2, ease: "power2.in"})
+    .to(leftWing.rotation, {z: -0.15, duration: 0.4, ease: "elastic.out(1, 0.5)"}, "+=0.1")
+    .to(rightWing.rotation, {z: 0.15, duration: 0.4, ease: "elastic.out(1, 0.5)"}, "<");
 
-  setTimeout(() => { showCard.value = true; }, 400);
+  setTimeout(() => {
+    showCard.value = true;
+  }, 400);
 };
 
 const animate = () => {
@@ -238,7 +211,9 @@ onUnmounted(() => {
   if (renderer) {
     renderer.dispose();
     if (containerRef.value && renderer.domElement) {
-      containerRef.value.removeChild(renderer.domElement);
+      if (containerRef.value.contains(renderer.domElement)) {
+        containerRef.value.removeChild(renderer.domElement);
+      }
     }
   }
 });
@@ -252,6 +227,10 @@ onUnmounted(() => {
 
     <Transition name="card-fly">
       <div v-if="showCard" class="book-card-overlay" @click="handleCardClick">
+        <div class="card-cover" v-if="currentBook.data.cover">
+          <img :src="currentBook.data.cover" :alt="currentBook.data.title"/>
+        </div>
+
         <div class="card-inner">
           <div class="card-badge">每日推荐</div>
           <h3>{{ currentBook.data.title }}</h3>
@@ -304,22 +283,46 @@ onUnmounted(() => {
 .book-card-overlay {
   position: absolute;
   z-index: 10;
-  background: rgba(var(--color-bg-rgb), 0.9);
-  backdrop-filter: blur(10px);
+  background: rgba(var(--color-bg-rgb), 0.95);
+  backdrop-filter: blur(12px);
   border: 1px solid var(--color-border);
   border-radius: 16px;
-  padding: 2rem;
+  padding: 1.5rem;
   width: 90%;
-  max-width: 350px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-  text-align: center;
+  max-width: 480px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
   cursor: pointer;
   transition: transform 0.2s, border-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  text-align: left;
 }
 
 .book-card-overlay:hover {
   transform: scale(1.02);
   border-color: var(--color-accent);
+}
+
+/* 封面样式 */
+.card-cover {
+  flex-shrink: 0;
+  width: 100px;
+  height: 140px;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  background-color: #eee;
+}
+
+.card-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-inner {
+  flex: 1;
 }
 
 .card-badge {
@@ -329,26 +332,31 @@ onUnmounted(() => {
   padding: 0.2rem 0.6rem;
   border-radius: 99px;
   display: inline-block;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .card-inner h3 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.5rem;
+  margin: 0 0 0.3rem 0;
+  font-size: 1.4rem;
   color: var(--color-text-primary);
 }
 
 .meta {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: var(--color-text-secondary);
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .comment {
   font-style: italic;
   color: var(--color-text-primary);
-  line-height: 1.6;
-  margin-bottom: 1.5rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .click-hint {
@@ -368,17 +376,35 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
-/* 卡片动画 */
+/* 移动端适配 */
+@media (max-width: 500px) {
+  .book-card-overlay {
+    flex-direction: column;
+    text-align: center;
+    padding: 2rem;
+  }
+
+  .card-cover {
+    width: 80px;
+    height: 110px;
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* 动画 */
 .card-fly-enter-active {
   animation: fly-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+
 .card-fly-leave-active {
   transition: opacity 0.3s;
 }
+
 .card-fly-enter-from {
   opacity: 0;
   transform: translateY(50px) scale(0.5) rotateX(20deg);
 }
+
 .card-fly-leave-to {
   opacity: 0;
   transform: scale(0.9);

@@ -15,9 +15,25 @@ type Props = {
   article: CollectionEntry<'articles'>;
 };
 const {article} = Astro.props;
-
 const {Content, headings} = await article.render();
+
+const allArticles = await getCollection('articles');
+const currentTags = article.data.tags || [];
+
+const relatedArticles = allArticles
+  .filter(a => a.slug !== article.slug)
+  .filter(a => a.data.tags?.some(t => currentTags.includes(t)))
+  .slice(0, 5);
+
+const recentArticles = allArticles
+  .filter(a => a.slug !== article.slug)
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 5);
+
+const displayArticles = relatedArticles.length > 0 ? relatedArticles : recentArticles;
+const displayTitle = relatedArticles.length > 0 ? "相关推荐" : "最新文章";
 ---
+
 <MainLayout
   title={article.data.title}
   showSidebar={true}
@@ -25,21 +41,45 @@ const {Content, headings} = await article.render();
 >
 
   <Sidebar client:load slot="sidebar">
-    <h3>文章</h3>
+    <h3>导航</h3>
     <ul>
-      <li><a href="/articles">« 返回列表</a></li>
+      <li><a href="/articles">« 返回文章列表</a></li>
     </ul>
 
-    <h3>相关主题 (示例)</h3>
-    <ul>
-      <li><a href="#">关于 Astro</a></li>
-      <li><a href="#">Markdown 教程</a></li>
+    <h3>{displayTitle}</h3>
+    <ul class="related-posts">
+      {displayArticles.map(post => (
+        <li>
+          <a href={`/articles/${post.slug}/`}>{post.data.title}</a>
+        </li>
+      ))}
     </ul>
+
+    {currentTags.length > 0 && (
+      <>
+        <h3>本文标签</h3>
+        <div class="sidebar-tags">
+          {currentTags.map(tag => (
+            <a href={`/articles/tag/${tag}`} class="sidebar-tag">#{tag}</a>
+          ))}
+        </div>
+      </>
+    )}
   </Sidebar>
 
-  <h1 class="post-title">{article.data.title}</h1>
-  <div class="post-meta">
-  </div>
+  <header class="article-header">
+    <h1 class="post-title">{article.data.title}</h1>
+    <div class="post-meta">
+      <time>{article.data.pubDate.toLocaleDateString('zh-CN')}</time>
+      {currentTags.length > 0 && (
+        <span class="meta-tags">
+          {currentTags.map(tag => (
+            <a href={`/articles/tag/${tag}`}>#{tag}</a>
+          ))}
+        </span>
+      )}
+    </div>
+  </header>
 
   <div class="astro-entry">
     <Content/>
@@ -52,21 +92,80 @@ const {Content, headings} = await article.render();
     font-size: 2.5rem;
     font-weight: 700;
     line-height: 1.2;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.8rem;
     color: var(--color-text-primary);
   }
 
   .post-meta {
-    color: #666;
+    color: var(--color-text-secondary);
     font-size: 0.95rem;
     border-bottom: 1px solid var(--color-border);
-    padding-bottom: 1rem;
+    padding-bottom: 1.5rem;
     margin-bottom: 2rem;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
   }
 
-  .post-meta .description {
-    font-style: italic;
-    margin-top: 0.5rem;
+  .meta-tags {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .meta-tags a {
+    color: var(--color-accent);
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+
+  .meta-tags a:hover {
+    text-decoration: underline;
+  }
+
+  /* 侧边栏样式 */
+  .sidebar-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .sidebar-tag {
+    font-size: 0.8rem;
     color: var(--color-text-secondary);
+    background: var(--color-bg-secondary);
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    text-decoration: none;
+    border: 1px solid var(--color-border);
+    transition: all 0.2s;
+  }
+
+  .sidebar-tag:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    background-color: var(--color-bg-mute);
+  }
+
+  .related-posts {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .related-posts li {
+    margin-bottom: 0.8rem;
+  }
+
+  .related-posts a {
+    font-size: 0.95rem;
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    display: block;
+    line-height: 1.4;
+    transition: color 0.2s;
+  }
+
+  .related-posts a:hover {
+    color: var(--color-accent);
   }
 </style>

@@ -1,25 +1,21 @@
 <template>
   <aside :class="['sidebar', { collapsed: isCollapsed }]">
     <button @click="toggleSidebar" class="toggle-btn" :title="isCollapsed ? '展开导览' : '折叠导览'">
-      <span class="icon" :class="{ 'is-collapsed-icon': isCollapsed }">
-        &lt;
-      </span>
+      <span class="icon" :class="{ 'is-collapsed-icon': isCollapsed }">&lt;</span>
     </button>
 
     <div class="sidebar-content">
-      <!-- 插槽内容 (文章导览等) -->
-      <slot></slot>
-    </div>
+      <slot></slot> </div>
   </aside>
 </template>
 
 <script setup>
-  import {ref} from 'vue';
+import {ref} from 'vue';
 
-  const isCollapsed = ref(false);
-  const toggleSidebar = () => {
-    isCollapsed.value = !isCollapsed.value;
-  };
+const isCollapsed = ref(false);
+const toggleSidebar = () => {
+  isCollapsed.value = !isCollapsed.value;
+};
 </script>
 
 <style scoped>
@@ -39,7 +35,6 @@
 }
 
 .sidebar.collapsed {
-  /* --- MODIFIED: 移除了 width: 10px; --- */
   background-color: transparent;
   border-color: transparent;
 }
@@ -72,10 +67,9 @@
   right: auto;
   left: 50%;
   transform: translateX(-50%);
-  opacity: 0; /* 默认隐藏 */
+  opacity: 0;
 }
 
-/* 当悬停在“空白区域” (即 .sidebar.collapsed) 时显示按钮 */
 .sidebar.collapsed:hover .toggle-btn {
   opacity: 1;
 }
@@ -90,15 +84,13 @@
   transform: rotate(180deg);
 }
 
-
 .sidebar-content {
   flex: 1;
   overflow-y: auto;
   padding: 1rem;
   opacity: 1;
   transform: translateX(0);
-  transition: opacity 0.2s ease-out,
-  transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.2s ease-out, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar.collapsed .sidebar-content {
@@ -108,10 +100,10 @@
   position: absolute;
 }
 
-/* ... :deep() 样式 (不变) ... */
+/* 插槽内容样式 */
 .sidebar-content :deep(h3) {
   font-size: 0.9rem;
-  text-transform: uppercase;
+  text-transform: none;
   color: var(--color-text-secondary);
   margin-top: 1rem;
   margin-bottom: 0.5rem;
@@ -131,6 +123,11 @@
   text-decoration: none;
   font-size: 0.95rem;
   white-space: nowrap;
+}
+
+.sidebar-content :deep(li a.active) {
+  color: var(--color-accent);
+  font-weight: 500;
 }
 
 .sidebar-content :deep(li a:hover) {

@@ -6,6 +6,7 @@ const currentYear = ref(new Date().getFullYear());
 
 <template>
   <footer class="site-footer">
+    <p>Build by <a href="https://astro.build/">Astro</a> & <a href="https://vuejs.org/">Vue</a></p>
     <p>&copy {{ currentYear }} starnighter. All rights reserved.</p>
   </footer>
 </template>
